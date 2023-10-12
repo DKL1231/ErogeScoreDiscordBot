@@ -43,17 +43,20 @@ async def on_message(message):
         return
     if len(tableContent) == 2:
         gamedata = tableContent[1].find_all("td")
-        gameurl = gamedata[0].find_all("a")[1].get("href")
-        gameimg = gamedata[0].find("img").get("src")
-        embed = discord.Embed(title=gamedata[0].find("a").get_text(), url=gameurl)
-        embed.add_field(name="회사", value=gamedata[1].get_text(), inline=False)
-        embed.add_field(name="발매일", value=gamedata[2].get_text(), inline=False)
-        embed.add_field(name="점수", value=gamedata[3].get_text(), inline=False)
-        embed.set_thumbnail(url=gameimg)
-        await message.reply(embed=embed)
+        await message.reply(embed=createEmbed(gamedata))
         return
     await message.reply("게임 선택", view=GameSelectView())
 
+def createEmbed(gamedata):
+    gameurl = gamedata[0].find_all("a")[1].get("href")
+    gameimg = gamedata[0].find("img").get("src")
+    embed = discord.Embed(title=gamedata[0].find("a").get_text(), url=gameurl)
+    embed.add_field(name="회사", value=gamedata[1].get_text(), inline=False)
+    embed.add_field(name="발매일", value=gamedata[2].get_text(), inline=False)
+    embed.add_field(name="점수", value=gamedata[3].get_text(), inline=False)
+    embed.set_thumbnail(url=gameimg)
+    return embed
+    
 class GameSelectView(discord.ui.View):
     @discord.ui.select(
         placeholder = "게임을 선택해 주세요",
