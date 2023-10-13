@@ -54,10 +54,14 @@ async def on_message(message):
             gamedatalist.append(content)
         await message.reply("게임 선택", view=GameSelectView(gamelist, gamedatalist))
 
+# 게임 정보 객체를 생성하는 함수
 def createGameEmbed(gamedata):
     gameurl = gamedata[0].find_all("a")[1].get("href")
     gameimg = gamedata[0].find("img").get("src")
-    embed = discord.Embed(title=gamedata[0].find("a").get_text(), url=gameurl)
+    gamename = gamedata[0].find("a").get_text()
+    if gamedata[0].find("span"):
+        gamename += gamedata[0].find("span").get_text()
+    embed = discord.Embed(title=gamename, url=gameurl)
     embed.add_field(name="회사", value=gamedata[1].get_text(), inline=False)
     embed.add_field(name="발매일", value=gamedata[2].get_text(), inline=False)
     embed.add_field(name="점수", value=gamedata[3].get_text(), inline=False)
