@@ -94,12 +94,14 @@ def createGameEmbed(gamedata):
     
     gamebrand = basictable.find("td").get_text()
     gamerelease = basictable.find_all("td")[1].get_text()
+    gametag = "\n".join(list(basictable.find("tr", {"id":"erogame"}).find("td").get_text(",").split(",")))
     
     gamescore = statistictable.find("tr", {"id":"median"}).find("td").get_text()
     
     embed = discord.Embed(title=gamename, url=gameurl)
     embed.add_field(name="회사", value=gamebrand, inline=False)
     embed.add_field(name="발매일", value=gamerelease, inline=False)
+    embed.add_field(name="태그", value=gametag, inline=False)
     embed.add_field(name="점수", value=gamescore, inline=False)
     embed.set_thumbnail(url=gameimg)
     return embed
