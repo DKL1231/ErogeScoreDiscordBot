@@ -33,21 +33,28 @@ async def on_message(message):
         return
     
     url = 'https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/kensaku.php?category='+category+'&word_category=name&word='+parse.quote(searchname)+'&mode=normal'
-    print(url)
     html = urlopen(url)
     bsObject = BeautifulSoup(html, "html.parser")
     tableContent = bsObject.find_all("div", {"id":"result"})[0].find_all("table")[0].find_all("tr")
-    print(tableContent)
-    if len(tableContent) > 31:
+    if len(tableContent) > 26:
         await message.reply("검색된 정보가 너무 많습니다. 더 자세히 입력해 주세요.")
         return
     if len(tableContent) == 2:
         gamedata = tableContent[1].find_all("td")
-        await message.reply(embed=createEmbed(gamedata))
+        await message.reply(embed=createGameEmbed(gamedata))
         return
-    await message.reply("게임 선택", view=GameSelectView())
+    else:
+        gamelist = []
+        gamedatalist = []
+        for content in tableContent[1:]:
+            gamename = content.find("a").get_text()
+            if content.find("span"):
+                gamename += content.find("span").get_text()
+            gamelist.append(gamename)
+            gamedatalist.append(content)
+        await message.reply("게임 선택", view=GameSelectView(gamelist, gamedatalist))
 
-def createEmbed(gamedata):
+def createGameEmbed(gamedata):
     gameurl = gamedata[0].find_all("a")[1].get("href")
     gameimg = gamedata[0].find("img").get("src")
     embed = discord.Embed(title=gamedata[0].find("a").get_text(), url=gameurl)
@@ -56,21 +63,19 @@ def createEmbed(gamedata):
     embed.add_field(name="점수", value=gamedata[3].get_text(), inline=False)
     embed.set_thumbnail(url=gameimg)
     return embed
-    
+
+class GameSelect(discord.ui.Select):
+    def __init__(self, gamelist, gamedatalist):
+        gameoption = []
+        self.gamedatalist = gamedatalist
+        for i, game in enumerate(gamelist):
+            gameoption.append(discord.SelectOption(label=f"{i+1}. {game}"))
+        super().__init__(placeholder="게임을 선택해 주세요", max_values=1, min_values=1, options=gameoption)
+    async def callback(self, interaction: discord.Interaction):
+        selectedgame = int(self.values[0][:self.values[0].find('.')])
+        await interaction.response.send_message(embed=createGameEmbed(self.gamedatalist[selectedgame-1].find_all("td")))
+
 class GameSelectView(discord.ui.View):
-    @discord.ui.select(
-        placeholder = "게임을 선택해 주세요",
-        min_values=1,
-        max_values=1,
-        options=[
-            discord.SelectOption(
-                label="1"
-            ),
-            discord.SelectOption(
-                label="2"
-            )
-        ]
-    )
-    async def select_callback(self, selected, interaction):
-        print(selected.data['values'][0])
-        await selected.response.send_message(selected.data['values'][0]+'를 선택하셨습니다')
+    def __init__(self, gamelist, gamedatalist, timeout=30):
+        super().__init__(timeout=timeout)
+        self.add_item(GameSelect(gamelist, gamedatalist))
